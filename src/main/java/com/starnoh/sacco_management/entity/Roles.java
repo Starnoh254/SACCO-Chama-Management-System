@@ -5,10 +5,11 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
+@Table(name = "roles")
 public class Roles {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
@@ -17,6 +18,11 @@ public class Roles {
 
     @Column(name = "created_at" , nullable = false , updatable = false)
     private Instant createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = Instant.now();
+    }
 
     public Long getId() {
         return id;
