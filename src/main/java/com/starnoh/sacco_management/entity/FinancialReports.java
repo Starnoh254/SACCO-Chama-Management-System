@@ -17,6 +17,7 @@ public class FinancialReports {
     @JoinColumn(name = "generated_by", nullable = false)
     private Users generatedBy;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "report_type", length = 50, nullable = false)
     private ReportType reportType;
 
@@ -24,7 +25,7 @@ public class FinancialReports {
     private String reportPeriod;
 
 
-    @Column(name = "file_path", length = 50, nullable = false)
+    @Column(name = "file_path", length = 255, nullable = false)
     private String filePath;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -34,5 +35,53 @@ public class FinancialReports {
     public void prePersist() {
         createdAt = Instant.now();
 
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Users getGeneratedBy() {
+        return generatedBy;
+    }
+
+    public void setGeneratedBy(Users generatedBy) {
+        this.generatedBy = generatedBy;
+    }
+
+    public ReportType getReportType() {
+        return reportType;
+    }
+
+    public void setReportType(ReportType reportType) {
+        this.reportType = reportType;
+    }
+
+    public String getReportPeriod() {
+        return reportPeriod;
+    }
+
+    public void setReportPeriod(String reportPeriod) {
+        this.reportPeriod = reportPeriod;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }
