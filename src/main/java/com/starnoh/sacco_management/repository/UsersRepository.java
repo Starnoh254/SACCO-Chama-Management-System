@@ -4,4 +4,7 @@ import com.starnoh.sacco_management.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UsersRepository extends JpaRepository<Users , Long> {
+
+    boolean existsByEmail(String email);
+
 }

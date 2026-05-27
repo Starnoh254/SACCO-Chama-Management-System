@@ -1,49 +1,50 @@
-package com.starnoh.sacco_management.entity;
-
-import com.starnoh.sacco_management.enums.UserStatus;
-import jakarta.persistence.*;
+package com.starnoh.sacco_management.dto;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "users")
-public class Users {
+public class UserResponseDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Roles role;
+    private String role;
 
-    @Column(name = "first_name")
     private String firstName;
 
-    @Column(name = "last_name")
     private String lastName;
 
-    @Column(unique = true)
     private String email;
 
-    @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column(name = "password_hash")
-    private String passwordHash;
+    private String status;
 
-    @Enumerated(EnumType.STRING)
-    private UserStatus status;
-
-    @Column(name = "last_login" , updatable = false)
     private Instant lastLogin;
 
-    @Column(name = "created_at" , nullable = false , updatable = false)
     private Instant createdAt;
 
-    @PrePersist
-    public void prePersist() {
-        createdAt = Instant.now();
+    public UserResponseDto() {
+    }
+
+    public UserResponseDto(
+            Long id,
+            String role,
+            String firstName,
+            String lastName,
+            String email,
+            String phoneNumber,
+            String status,
+            Instant lastLogin,
+            Instant createdAt
+    ) {
+        this.id = id;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.status = status;
+        this.lastLogin = lastLogin;
+        this.createdAt = createdAt;
     }
 
     public Long getId() {
@@ -54,11 +55,11 @@ public class Users {
         this.id = id;
     }
 
-    public Roles getRole() {
+    public String getRole() {
         return role;
     }
 
-    public void setRole(Roles role) {
+    public void setRole(String role) {
         this.role = role;
     }
 
@@ -94,19 +95,11 @@ public class Users {
         this.phoneNumber = phoneNumber;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public UserStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(UserStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
