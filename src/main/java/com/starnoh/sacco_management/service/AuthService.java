@@ -28,7 +28,6 @@ public class AuthService {
 
     public UserResponseDto register(RegisterRequestDto request){
 
-        try {
 
             if(usersRepository.existsByEmail(request.getEmail())) {
                 throw new DuplicateResourceException("Registration failed : Email is already in use!");
@@ -49,10 +48,6 @@ public class AuthService {
             Users savedUser = usersRepository.save(user);
 
             return mapToUserResponseDto(savedUser);
-
-        } catch (Exception error) {
-            throw new RuntimeException(error.getMessage());
-        }
 
 
     }

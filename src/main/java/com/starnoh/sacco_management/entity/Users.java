@@ -35,7 +35,7 @@ public class Users {
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    @Column(name = "last_login" , updatable = false)
+    @Column(name = "last_login" , nullable = true, updatable = false)
     private Instant lastLogin;
 
     @Column(name = "created_at" , nullable = false , updatable = false)

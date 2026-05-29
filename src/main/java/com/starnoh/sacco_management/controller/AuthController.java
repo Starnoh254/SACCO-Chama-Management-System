@@ -4,6 +4,7 @@ import com.starnoh.sacco_management.dto.ApiResponse;
 import com.starnoh.sacco_management.dto.RegisterRequestDto;
 import com.starnoh.sacco_management.dto.UserResponseDto;
 import com.starnoh.sacco_management.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +24,9 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserResponseDto>> register(@RequestBody RegisterRequestDto request){
+    public ResponseEntity<ApiResponse<UserResponseDto>> register(
+            @Valid @RequestBody RegisterRequestDto request
+    ){
 
         UserResponseDto response = authService.register(request);
 
