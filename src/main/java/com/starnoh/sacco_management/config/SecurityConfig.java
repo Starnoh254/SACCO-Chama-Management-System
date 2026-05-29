@@ -25,7 +25,7 @@ public class SecurityConfig {
                 // 2. Configure endpoint authorization rules
                 .authorizeHttpRequests(auth -> auth
                         // Allow anyone to access the registration endpoint
-                        .requestMatchers("/api/v1/auth/register").permitAll()
+                        .requestMatchers("/api/v1/auth/register" , "/api/v1/auth/login").permitAll()
                         // All other requests still require authentication
                         .anyRequest().authenticated()
                 );

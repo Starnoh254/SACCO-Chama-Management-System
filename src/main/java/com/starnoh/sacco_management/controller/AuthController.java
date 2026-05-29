@@ -1,8 +1,6 @@
 package com.starnoh.sacco_management.controller;
 
-import com.starnoh.sacco_management.dto.ApiResponse;
-import com.starnoh.sacco_management.dto.RegisterRequestDto;
-import com.starnoh.sacco_management.dto.UserResponseDto;
+import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -35,6 +33,24 @@ public class AuthController {
                 .body(new ApiResponse<>(
                         true,
                         "Account created successfully",
+                        response
+                ));
+
+    }
+
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponseDto>> login(
+            @Valid @RequestBody LoginRequestDto request
+    ){
+
+        LoginResponseDto response = authService.login(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        true,
+                        "Login successful",
                         response
                 ));
 
