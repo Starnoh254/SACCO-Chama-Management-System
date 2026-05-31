@@ -47,7 +47,7 @@ public class AuthController {
         LoginResponseDto response = authService.login(request);
 
         return ResponseEntity
-                .status(HttpStatus.CREATED)
+                .status(HttpStatus.OK)
                 .body(new ApiResponse<>(
                         true,
                         "Login successful",
@@ -55,6 +55,9 @@ public class AuthController {
                 ));
 
     }
+
+
+
 
 
 }

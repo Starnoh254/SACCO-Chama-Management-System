@@ -1,6 +1,8 @@
 package com.starnoh.sacco_management.service;
 
 import com.starnoh.sacco_management.entity.Users;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -40,6 +42,72 @@ public class JwtService {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256) // Cryptographically sign it
                 .compact();
     }
+
+    /**
+     * Extracts the user ID custom claim from the token.
+     */
+    public Long extractUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        // Cast the value to Long (jjwt usually parses numbers as Integer or Long)
+        Object userId = claims.get("userId");
+        if (userId instanceof Number) {
+            return ((Number) userId).longValue();
+        }
+        return null;
+    }
+
+    /**
+     * Extracts the user role custom claim from the token.
+     */
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+
+    /**
+     * Extracts the user first name custom claim from the token.
+     */
+    public String extractFirstName(String token) {
+        return extractAllClaims(token).get("firstName", String.class);
+    }
+
+    /**
+     * Extracts the subject (usually email or username) from the token.
+     */
+    public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    /**
+     * Helper method to parse the token and extract all claims.
+     */
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+
+    public boolean validateToken(
+            String token
+    ) {
+
+        try {
+
+            Claims claims = extractAllClaims(token);
+
+            return !claims
+                    .getExpiration()
+                    .before(new Date());
+
+        } catch (JwtException | IllegalArgumentException e) {
+
+            return false;
+        }
+    }
+
+
 
     /**
      * Helper method to decode the secret string into a cryptographic signing Key.
