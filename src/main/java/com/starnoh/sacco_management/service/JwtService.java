@@ -23,13 +23,17 @@ public class JwtService {
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
 
+    @Value("${app.jwt.refreshToken.expiration}")
+    private long jwtRefreshExpiration;
+
     /**
      * Generates a JWT token for a authenticated user.
      */
-    public String generateToken(Users user) {
+    public String generateAccessToken(Users user) {
         // 1. Prepare extra claims to embed in the payload
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("userId", user.getId());
+        extraClaims.put("type" , "ACCESS");
         extraClaims.put("role", user.getRole().getName());
         extraClaims.put("firstName", user.getFirstName());
 
@@ -39,6 +43,23 @@ public class JwtService {
                 .setSubject(user.getEmail())                    // Set username/email as subject
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Set creation time
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration)) // Set expiry
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256) // Cryptographically sign it
+                .compact();
+    }
+
+    public String generateRefreshToken(Users user) {
+        // 1. Prepare extra claims to embed in the payload
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("userId", user.getId());
+        extraClaims.put("type" , "REFRESH");
+
+
+        // 2. Build and sign the token
+        return Jwts.builder()
+                .setClaims(extraClaims)                         // Set custom claims
+                .setSubject(user.getEmail())                    // Set username/email as subject
+                .setIssuedAt(new Date(System.currentTimeMillis())) // Set creation time
+                .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpiration)) // Set expiry
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256) // Cryptographically sign it
                 .compact();
     }

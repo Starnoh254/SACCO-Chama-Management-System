@@ -1,9 +1,6 @@
 package com.starnoh.sacco_management.service;
 
-import com.starnoh.sacco_management.dto.LoginRequestDto;
-import com.starnoh.sacco_management.dto.LoginResponseDto;
-import com.starnoh.sacco_management.dto.RegisterRequestDto;
-import com.starnoh.sacco_management.dto.UserResponseDto;
+import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.entity.Roles;
 import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.enums.RolesType;
@@ -14,11 +11,11 @@ import com.starnoh.sacco_management.exception.ResourceNotFoundException;
 import com.starnoh.sacco_management.exception.UnauthorizedException;
 import com.starnoh.sacco_management.repository.RolesRepository;
 import com.starnoh.sacco_management.repository.UsersRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
@@ -33,6 +30,32 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.rolesRepository = rolesRepository;
         this.jwtService = jwtService;
+    }
+
+    public TokenResponseDto refreshToken(HttpServletRequest request){
+        String authHeader = request.getHeader("Authorization");
+
+        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+            throw new UnauthorizedException("Refresh token missing");
+        }
+
+        String refreshToken = authHeader.substring(7);
+
+        if(!jwtService.validateToken(refreshToken)){
+            throw new UnauthorizedException("Invalid refresh token");
+        }
+
+        Long userId = jwtService.extractUserId(refreshToken);
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id : " + userId));
+
+        if(user.getStatus() == UserStatus.SUSPENDED) {
+            throw new ForbiddenException("Your account has been suspended. Please contact support.");
+        }
+
+        String accessToken = jwtService.generateAccessToken(user);
+
+        return new TokenResponseDto(accessToken , "Bearer" , refreshToken);
     }
 
     public LoginResponseDto login(LoginRequestDto request){
@@ -51,11 +74,15 @@ public class AuthService {
 
         user.setLastLogin(Instant.now());
 
-        String token = jwtService.generateToken(user);
+        String accessToken = jwtService.generateAccessToken(user);
+
+        String refreshToken = jwtService.generateRefreshToken(user);
 
         UserResponseDto userResponseDto = mapToUserResponseDto(user);
 
-        return new LoginResponseDto(token , "Bearer" , userResponseDto);
+        TokenResponseDto tokenResponseDto = new TokenResponseDto(accessToken , "Bearer" , refreshToken);
+
+        return new LoginResponseDto( tokenResponseDto , userResponseDto);
 
 
     }

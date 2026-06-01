@@ -2,6 +2,7 @@ package com.starnoh.sacco_management.controller;
 
 import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,21 @@ public class AuthController {
                         response
                 ));
 
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<TokenResponseDto>> refreshToken(HttpServletRequest request){
+
+        TokenResponseDto response = authService.refreshToken(request);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                   true,
+                   "Token refreshed successfully",
+                        response
+
+                ));
     }
 
 
