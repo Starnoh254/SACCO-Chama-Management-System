@@ -2,6 +2,7 @@ package com.starnoh.sacco_management.service;
 
 import com.starnoh.sacco_management.dto.MembershipApplicationRequestDto;
 import com.starnoh.sacco_management.dto.MembershipApplicationResponseDto;
+import com.starnoh.sacco_management.dto.MembershipApplicationSummaryResponseDto;
 import com.starnoh.sacco_management.dto.UserMembershipApplicationResponseDto;
 import com.starnoh.sacco_management.entity.MembershipApplications;
 import com.starnoh.sacco_management.entity.Users;
@@ -15,10 +16,13 @@ import com.starnoh.sacco_management.repository.MembershipApplicationsRepository;
 import com.starnoh.sacco_management.repository.UsersRepository;
 import com.starnoh.sacco_management.util.SecurityUtils;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Service
 public class MembershipApplicationService {
@@ -31,6 +35,22 @@ public class MembershipApplicationService {
         this.usersRepository = usersRepository;
         this.securityUtils = securityUtils;
         this.membershipApplicationsRepository = membershipApplicationsRepository;
+    }
+
+    public Page<MembershipApplicationSummaryResponseDto> getApplications(String status , Pageable pageable) {
+        Users user = getValidatedCurrentUser();
+
+        if(!Objects.equals(user.getRole().getName(), "ADMINISTRATOR")){
+            throw new ForbiddenException("You do not have permission to access membership applications");
+        }
+
+        // Convert the incoming String parameter into the strict Enum type
+        ApplicationStatus statusEnum = ApplicationStatus.valueOf(status.toUpperCase());
+        Page<MembershipApplications>  membershipApplicationsPage = membershipApplicationsRepository.findByApplicationStatus(statusEnum,pageable);
+
+        return membershipApplicationsPage.map(this::mapToMembershipApplicationSummaryResponseDto);
+
+
     }
 
     public UserMembershipApplicationResponseDto getUserApplications(){
@@ -110,6 +130,21 @@ public class MembershipApplicationService {
                 membershipApplications.getAppliedAt(),
                 membershipApplications.getReviewedBy(),
                 membershipApplications.getReviewedAt()
+        );
+    }
+
+    private MembershipApplicationSummaryResponseDto mapToMembershipApplicationSummaryResponseDto(MembershipApplications membershipApplications) {
+        return new MembershipApplicationSummaryResponseDto(
+                membershipApplications.getId(),
+                membershipApplications.getUser().getId(),
+                membershipApplications.getUser().getFirstName(),
+                membershipApplications.getUser().getLastName(),
+                membershipApplications.getUser().getEmail(),
+                membershipApplications.getUser().getPhoneNumber(),
+                membershipApplications.getNationalId(),
+                membershipApplications.getAddress(),
+                membershipApplications.getApplicationStatus().toString(),
+                membershipApplications.getAppliedAt()
         );
     }
 }
