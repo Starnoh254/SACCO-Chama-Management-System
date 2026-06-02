@@ -14,6 +14,11 @@ public interface MembershipApplicationsRepository extends JpaRepository<Membersh
             ApplicationStatus applicationStatus
     );
 
+    Optional<MembershipApplications>
+    findByUserId(
+            Long userId
+    );
+
     boolean existsByUserIdAndApplicationStatus(
             Long userId,
             ApplicationStatus applicationStatus

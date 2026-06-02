@@ -5,10 +5,7 @@ import com.starnoh.sacco_management.service.MembershipApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/membership-applications")
@@ -32,6 +29,21 @@ public class MembershipApplicationsController {
                 .body(new ApiResponse<>(
                         true,
                         "Membership application submitted successfully",
+                        response
+                ));
+
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserMembershipApplicationResponseDto>> getMembershipApplication(){
+
+        UserMembershipApplicationResponseDto response = membershipApplicationService.getUserApplications();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        "Application retrieved successfully",
                         response
                 ));
 
