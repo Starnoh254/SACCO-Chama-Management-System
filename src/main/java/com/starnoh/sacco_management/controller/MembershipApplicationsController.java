@@ -91,5 +91,22 @@ public class MembershipApplicationsController {
 
     }
 
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<ApiResponse<MembershipApplicationApprovalResponseDto>> rejectApplication(
+            @PathVariable Long id
+    ) {
+
+        MembershipApplicationApprovalResponseDto response = membershipApplicationService.rejectApplication(id);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true ,
+                        "Membership application rejected successfully",
+                        response
+                ));
+
+    }
+
 
 }

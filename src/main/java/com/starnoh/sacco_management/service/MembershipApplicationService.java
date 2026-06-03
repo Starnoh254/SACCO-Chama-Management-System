@@ -37,6 +37,32 @@ public class MembershipApplicationService {
     }
 
     @Transactional
+    public MembershipApplicationApprovalResponseDto rejectApplication(Long applicationId){
+
+        Users admin = getValidatedCurrentUser();
+
+        checkIfUserisAdmin(admin);
+
+        MembershipApplications application = membershipApplicationsRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membership Application not found"));
+
+        if(application.getApplicationStatus() != ApplicationStatus.PENDING) {
+            throw new BadRequestException("Only pending applications can be rejected");
+        }
+
+        application.setApplicationStatus(ApplicationStatus.REJECTED);
+
+        application.setReviewedBy(admin);
+        application.setReviewedAt(Instant.now());
+
+
+        membershipApplicationsRepository.save(application);
+
+        return mapToMembershipApplicationApprovalResponseDto(application);
+
+    }
+
+    @Transactional
     public MembershipApplicationApprovalResponseDto approveApplication(Long applicationId){
 
         Users admin = getValidatedCurrentUser();
