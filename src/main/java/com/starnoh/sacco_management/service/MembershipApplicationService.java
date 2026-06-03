@@ -1,13 +1,16 @@
 package com.starnoh.sacco_management.service;
 
 import com.starnoh.sacco_management.dto.*;
+import com.starnoh.sacco_management.entity.Members;
 import com.starnoh.sacco_management.entity.MembershipApplications;
 import com.starnoh.sacco_management.entity.Roles;
 import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.enums.ApplicationStatus;
+import com.starnoh.sacco_management.enums.MemberStatus;
 import com.starnoh.sacco_management.enums.RolesType;
 import com.starnoh.sacco_management.enums.UserStatus;
 import com.starnoh.sacco_management.exception.*;
+import com.starnoh.sacco_management.repository.MemberRepository;
 import com.starnoh.sacco_management.repository.MembershipApplicationsRepository;
 import com.starnoh.sacco_management.repository.RolesRepository;
 import com.starnoh.sacco_management.repository.UsersRepository;
@@ -19,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Year;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 public class MembershipApplicationService {
@@ -28,12 +34,14 @@ public class MembershipApplicationService {
     private final SecurityUtils securityUtils;
     private final MembershipApplicationsRepository membershipApplicationsRepository;
     private final RolesRepository rolesRepository;
+    private final MemberRepository memberRepository;
 
-    public MembershipApplicationService(UsersRepository usersRepository, SecurityUtils securityUtils, MembershipApplicationsRepository membershipApplicationsRepository, RolesRepository rolesRepository) {
+    public MembershipApplicationService(UsersRepository usersRepository, SecurityUtils securityUtils, MembershipApplicationsRepository membershipApplicationsRepository, RolesRepository rolesRepository, MemberRepository memberRepository) {
         this.usersRepository = usersRepository;
         this.securityUtils = securityUtils;
         this.membershipApplicationsRepository = membershipApplicationsRepository;
         this.rolesRepository = rolesRepository;
+        this.memberRepository = memberRepository;
     }
 
     @Transactional
@@ -88,10 +96,30 @@ public class MembershipApplicationService {
 
         applicant.setRole(memberRole);
 
-        usersRepository.save(applicant);
+        Members member = new Members();
+
+        member.setUser(applicant);
+
+        String membershipNumber =
+                "MEM-" + Year.now().getValue() +
+                        "-" + String.format("%06d", applicant.getId());
+
+        member.setMembershipNumber(membershipNumber);
+
+        member.setNationalId(application.getNationalId());
+
+        member.setDateJoined(LocalDate.now());
+
+        member.setAddress(application.getAddress());
+
+        member.setStatus(MemberStatus.ACTIVE);
+
 
         membershipApplicationsRepository.save(application);
 
+        usersRepository.save(applicant);
+
+        memberRepository.save(member);
         return mapToMembershipApplicationApprovalResponseDto(application);
 
     }
@@ -149,6 +177,14 @@ public class MembershipApplicationService {
 
         return mapToMembershipApplicationResponseDto(membershipApplications);
     }
+
+//    private String generateMembershipNumber() {
+//        return UUID.randomUUID()
+//                .toString()
+//                .replace("-", "")
+//                .substring(0, 8)
+//                .toUpperCase();
+//    }
 
     private void checkIfUserisAdmin(Users user) {
         if(!Objects.equals(user.getRole().getName(), "ADMINISTRATOR")){
