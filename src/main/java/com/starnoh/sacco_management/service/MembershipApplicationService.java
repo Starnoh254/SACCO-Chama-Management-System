@@ -8,13 +8,11 @@ import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.enums.ApplicationStatus;
 import com.starnoh.sacco_management.enums.MemberStatus;
 import com.starnoh.sacco_management.enums.RolesType;
-import com.starnoh.sacco_management.enums.UserStatus;
 import com.starnoh.sacco_management.exception.*;
 import com.starnoh.sacco_management.repository.MemberRepository;
 import com.starnoh.sacco_management.repository.MembershipApplicationsRepository;
 import com.starnoh.sacco_management.repository.RolesRepository;
 import com.starnoh.sacco_management.repository.UsersRepository;
-import com.starnoh.sacco_management.util.SecurityUtils;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,29 +23,28 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
 public class MembershipApplicationService {
 
     private final UsersRepository usersRepository;
-    private final SecurityUtils securityUtils;
     private final MembershipApplicationsRepository membershipApplicationsRepository;
     private final RolesRepository rolesRepository;
     private final MemberRepository memberRepository;
+    private final CurrentUserService currentUserService;
 
-    public MembershipApplicationService(UsersRepository usersRepository, SecurityUtils securityUtils, MembershipApplicationsRepository membershipApplicationsRepository, RolesRepository rolesRepository, MemberRepository memberRepository) {
+    public MembershipApplicationService(UsersRepository usersRepository, MembershipApplicationsRepository membershipApplicationsRepository, RolesRepository rolesRepository, MemberRepository memberRepository, CurrentUserService currentUserService) {
         this.usersRepository = usersRepository;
-        this.securityUtils = securityUtils;
         this.membershipApplicationsRepository = membershipApplicationsRepository;
         this.rolesRepository = rolesRepository;
         this.memberRepository = memberRepository;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
     public MembershipApplicationApprovalResponseDto rejectApplication(Long applicationId){
 
-        Users admin = getValidatedCurrentUser();
+        Users admin = currentUserService.getValidatedCurrentUser();
 
         checkIfUserisAdmin(admin);
 
@@ -73,7 +70,7 @@ public class MembershipApplicationService {
     @Transactional
     public MembershipApplicationApprovalResponseDto approveApplication(Long applicationId){
 
-        Users admin = getValidatedCurrentUser();
+        Users admin = currentUserService.getValidatedCurrentUser();
 
         checkIfUserisAdmin(admin);
 
@@ -125,7 +122,7 @@ public class MembershipApplicationService {
     }
 
     public Page<MembershipApplicationSummaryResponseDto> getApplications(String status , Pageable pageable) {
-        Users user = getValidatedCurrentUser();
+        Users user = currentUserService.getValidatedCurrentUser();
 
         checkIfUserisAdmin(user);
 
@@ -140,7 +137,7 @@ public class MembershipApplicationService {
 
     public UserMembershipApplicationResponseDto getUserApplications(){
         // Use the helper method to get the validated user
-        Users user = getValidatedCurrentUser();
+        Users user = currentUserService.getValidatedCurrentUser();
 
         MembershipApplications membershipApplication = membershipApplicationsRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Membership Application not found"));
@@ -151,7 +148,7 @@ public class MembershipApplicationService {
     @Transactional(rollbackFor = Exception.class)
     public MembershipApplicationResponseDto apply(MembershipApplicationRequestDto request) {
         // Use the helper method to get the validated user
-        Users user = getValidatedCurrentUser();
+        Users user = currentUserService.getValidatedCurrentUser();
 
         boolean exists =
                 membershipApplicationsRepository
@@ -190,26 +187,6 @@ public class MembershipApplicationService {
         if(!Objects.equals(user.getRole().getName(), "ADMINISTRATOR")){
             throw new ForbiddenException("You do not have permission to access membership applications");
         }
-    }
-
-    /**
-     * Helper method to fetch, validate, and return the currently authenticated user.
-     */
-    private Users getValidatedCurrentUser() {
-        Long userId = securityUtils.getCurrentUserId();
-
-        if(userId == null) {
-            throw new UnauthorizedException("User Id not found");
-        }
-
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id : " + userId));
-
-        if(user.getStatus() == UserStatus.SUSPENDED) {
-            throw new ForbiddenException("Your account has been suspended. Please contact support.");
-        }
-
-        return user;
     }
 
     private MembershipApplicationResponseDto mapToMembershipApplicationResponseDto(MembershipApplications membershipApplication) {
