@@ -1,18 +1,15 @@
 package com.starnoh.sacco_management.service;
 
-import com.starnoh.sacco_management.dto.MembershipApplicationRequestDto;
-import com.starnoh.sacco_management.dto.MembershipApplicationResponseDto;
-import com.starnoh.sacco_management.dto.MembershipApplicationSummaryResponseDto;
-import com.starnoh.sacco_management.dto.UserMembershipApplicationResponseDto;
+import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.entity.MembershipApplications;
+import com.starnoh.sacco_management.entity.Roles;
 import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.enums.ApplicationStatus;
+import com.starnoh.sacco_management.enums.RolesType;
 import com.starnoh.sacco_management.enums.UserStatus;
-import com.starnoh.sacco_management.exception.DuplicateResourceException;
-import com.starnoh.sacco_management.exception.ForbiddenException;
-import com.starnoh.sacco_management.exception.ResourceNotFoundException;
-import com.starnoh.sacco_management.exception.UnauthorizedException;
+import com.starnoh.sacco_management.exception.*;
 import com.starnoh.sacco_management.repository.MembershipApplicationsRepository;
+import com.starnoh.sacco_management.repository.RolesRepository;
 import com.starnoh.sacco_management.repository.UsersRepository;
 import com.starnoh.sacco_management.util.SecurityUtils;
 
@@ -30,19 +27,53 @@ public class MembershipApplicationService {
     private final UsersRepository usersRepository;
     private final SecurityUtils securityUtils;
     private final MembershipApplicationsRepository membershipApplicationsRepository;
+    private final RolesRepository rolesRepository;
 
-    public MembershipApplicationService(UsersRepository usersRepository, SecurityUtils securityUtils, MembershipApplicationsRepository membershipApplicationsRepository) {
+    public MembershipApplicationService(UsersRepository usersRepository, SecurityUtils securityUtils, MembershipApplicationsRepository membershipApplicationsRepository, RolesRepository rolesRepository) {
         this.usersRepository = usersRepository;
         this.securityUtils = securityUtils;
         this.membershipApplicationsRepository = membershipApplicationsRepository;
+        this.rolesRepository = rolesRepository;
+    }
+
+    @Transactional
+    public MembershipApplicationApprovalResponseDto approveApplication(Long applicationId){
+
+        Users admin = getValidatedCurrentUser();
+
+        checkIfUserisAdmin(admin);
+
+        MembershipApplications application = membershipApplicationsRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membership Application not found"));
+
+        if(application.getApplicationStatus() != ApplicationStatus.PENDING) {
+            throw new BadRequestException("Only pending applications can be approved");
+        }
+
+        application.setApplicationStatus(ApplicationStatus.APPROVED);
+
+        application.setReviewedBy(admin);
+        application.setReviewedAt(Instant.now());
+
+        Roles memberRole = rolesRepository.findByName(RolesType.MEMBER.toString())
+                .orElseThrow(() -> new ResourceNotFoundException("The role selected doesn't exist "));
+
+        Users applicant = application.getUser();
+
+        applicant.setRole(memberRole);
+
+        usersRepository.save(applicant);
+
+        membershipApplicationsRepository.save(application);
+
+        return mapToMembershipApplicationApprovalResponseDto(application);
+
     }
 
     public Page<MembershipApplicationSummaryResponseDto> getApplications(String status , Pageable pageable) {
         Users user = getValidatedCurrentUser();
 
-        if(!Objects.equals(user.getRole().getName(), "ADMINISTRATOR")){
-            throw new ForbiddenException("You do not have permission to access membership applications");
-        }
+        checkIfUserisAdmin(user);
 
         // Convert the incoming String parameter into the strict Enum type
         ApplicationStatus statusEnum = ApplicationStatus.valueOf(status.toUpperCase());
@@ -91,6 +122,12 @@ public class MembershipApplicationService {
         membershipApplicationsRepository.save(membershipApplications);
 
         return mapToMembershipApplicationResponseDto(membershipApplications);
+    }
+
+    private void checkIfUserisAdmin(Users user) {
+        if(!Objects.equals(user.getRole().getName(), "ADMINISTRATOR")){
+            throw new ForbiddenException("You do not have permission to access membership applications");
+        }
     }
 
     /**
@@ -145,6 +182,15 @@ public class MembershipApplicationService {
                 membershipApplications.getAddress(),
                 membershipApplications.getApplicationStatus().toString(),
                 membershipApplications.getAppliedAt()
+        );
+    }
+
+    private MembershipApplicationApprovalResponseDto mapToMembershipApplicationApprovalResponseDto(MembershipApplications membershipApplications){
+        return new MembershipApplicationApprovalResponseDto(
+                membershipApplications.getId(),
+                membershipApplications.getApplicationStatus().toString(),
+                membershipApplications.getReviewedBy().getId(),
+                membershipApplications.getReviewedAt()
         );
     }
 }

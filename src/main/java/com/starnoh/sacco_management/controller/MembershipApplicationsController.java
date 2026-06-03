@@ -74,5 +74,22 @@ public class MembershipApplicationsController {
 
     }
 
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<ApiResponse<MembershipApplicationApprovalResponseDto>> approveApplication(
+            @PathVariable Long id
+    ) {
+
+        MembershipApplicationApprovalResponseDto response = membershipApplicationService.approveApplication(id);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true ,
+                        "Membership application approved successfully",
+                        response
+                ));
+
+    }
+
 
 }
