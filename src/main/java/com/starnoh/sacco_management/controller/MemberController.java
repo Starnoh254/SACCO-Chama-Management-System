@@ -22,6 +22,8 @@ public class MemberController {
         this.memberService = memberService;
     }
 
+    // Endpoint to fetch paginated and filtered list of members, accessible only to ADMINISTRATOR and TREASURER roles
+
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'TREASURER')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<MemberResponseDto>>> getAllMembers(

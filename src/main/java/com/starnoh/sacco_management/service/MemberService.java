@@ -27,6 +27,8 @@ public class MemberService {
         this.memberRepository = memberRepository;
     }
 
+
+    // Method to fetch paginated and filtered list of members
     public Page<MemberResponseDto> getAllMembers(MemberFilterRequest filter) {
 
         Users admin = currentUserService.getValidatedCurrentUser();
@@ -42,12 +44,14 @@ public class MemberService {
 
     }
 
+    // Helper method to check if the user has ADMINISTRATOR or TREASURER role
     private void checkIfUserisAdminorTreasurer(Users user) {
         if(!Objects.equals(user.getRole().getName(), "ADMINISTRATOR") && !Objects.equals(user.getRole().getName(), "TREASURER")) {
             throw new ForbiddenException("You do not have permission to access Members data");
         }
     }
 
+    // Helper method to convert Members entity to MemberResponseDto
     private MemberResponseDto mapToDto(Members member) {
         return new MemberResponseDto(
                 member.getId(),

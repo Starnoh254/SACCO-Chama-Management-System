@@ -41,6 +41,7 @@ public class MembershipApplicationService {
         this.currentUserService = currentUserService;
     }
 
+    // Method to reject a membership application
     @Transactional
     public MembershipApplicationApprovalResponseDto rejectApplication(Long applicationId){
 
@@ -67,6 +68,8 @@ public class MembershipApplicationService {
 
     }
 
+
+    // Method to approve a membership application and create a new member
     @Transactional
     public MembershipApplicationApprovalResponseDto approveApplication(Long applicationId){
 
@@ -121,6 +124,8 @@ public class MembershipApplicationService {
 
     }
 
+
+    // Method to fetch paginated list of membership applications based on status
     public Page<MembershipApplicationSummaryResponseDto> getApplications(String status , Pageable pageable) {
         Users user = currentUserService.getValidatedCurrentUser();
 
@@ -135,6 +140,8 @@ public class MembershipApplicationService {
 
     }
 
+
+    // Method to fetch the current user's membership application details
     public UserMembershipApplicationResponseDto getUserApplications(){
         // Use the helper method to get the validated user
         Users user = currentUserService.getValidatedCurrentUser();

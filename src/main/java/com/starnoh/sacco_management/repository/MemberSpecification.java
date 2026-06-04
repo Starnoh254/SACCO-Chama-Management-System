@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 
-
+// This class provides a dynamic Specification for filtering Members based on the criteria defined in MemberFilterRequest.
 public class MemberSpecification {
 
 
