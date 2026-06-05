@@ -7,10 +7,7 @@ import com.starnoh.sacco_management.service.MemberService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -45,5 +42,12 @@ public class MemberController {
 
         Page<MemberResponseDto> response = memberService.getAllMembers(filter);
         return ResponseEntity.ok(new ApiResponse<>(true, "Fetched members successfully", response));
+    }
+
+    @PreAuthorize(("hasAnyRole('ADMINISTRATOR', 'TREASURER')"))
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MemberResponseDto>> getMemberById(@PathVariable Long id) {
+        MemberResponseDto member = memberService.getMemberById(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Fetched member successfully", member));
     }
 }

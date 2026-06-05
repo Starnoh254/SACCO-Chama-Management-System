@@ -5,6 +5,7 @@ import com.starnoh.sacco_management.dto.MemberResponseDto;
 import com.starnoh.sacco_management.entity.Members;
 import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.exception.ForbiddenException;
+import com.starnoh.sacco_management.exception.ResourceNotFoundException;
 import com.starnoh.sacco_management.repository.MemberRepository;
 import com.starnoh.sacco_management.repository.MemberSpecification;
 import org.springframework.data.domain.Page;
@@ -42,6 +43,18 @@ public class MemberService {
 
         return membersPage.map(this::mapToDto);
 
+    }
+
+
+    // Method to fetch a single member by ID
+    public MemberResponseDto getMemberById(Long id) {
+        Users admin = currentUserService.getValidatedCurrentUser();
+        checkIfUserisAdminorTreasurer(admin);
+
+        Members member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found with id : " + id));
+
+        return mapToDto(member);
     }
 
     // Helper method to check if the user has ADMINISTRATOR or TREASURER role
