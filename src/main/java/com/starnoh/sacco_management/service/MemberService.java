@@ -2,12 +2,15 @@ package com.starnoh.sacco_management.service;
 
 import com.starnoh.sacco_management.dto.MemberFilterRequest;
 import com.starnoh.sacco_management.dto.MemberResponseDto;
+import com.starnoh.sacco_management.dto.UpdateMemberRequest;
 import com.starnoh.sacco_management.entity.Members;
 import com.starnoh.sacco_management.entity.Users;
+import com.starnoh.sacco_management.enums.MemberStatus;
 import com.starnoh.sacco_management.exception.ForbiddenException;
 import com.starnoh.sacco_management.exception.ResourceNotFoundException;
 import com.starnoh.sacco_management.repository.MemberRepository;
 import com.starnoh.sacco_management.repository.MemberSpecification;
+import com.starnoh.sacco_management.repository.UsersRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,10 +25,12 @@ public class MemberService {
 
     private final CurrentUserService currentUserService;
     private final MemberRepository memberRepository;
+    private final UsersRepository usersRepository;
 
-    public MemberService(CurrentUserService currentUserService, MemberRepository memberRepository) {
+    public MemberService(CurrentUserService currentUserService, MemberRepository memberRepository, UsersRepository usersRepository) {
         this.currentUserService = currentUserService;
         this.memberRepository = memberRepository;
+        this.usersRepository = usersRepository;
     }
 
 
@@ -43,6 +48,40 @@ public class MemberService {
 
         return membersPage.map(this::mapToDto);
 
+    }
+
+    public MemberResponseDto updateMember(Long id, UpdateMemberRequest request) {
+        Users admin = currentUserService.getValidatedCurrentUser();
+        checkIfUserisAdminorTreasurer(admin);
+
+        Members member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found with id : " + id));
+
+        Users user = member.getUser();
+
+        if(request.getNationalId() != null && !request.getNationalId().equals(member.getNationalId())) {
+            memberRepository.findByNationalId(request.getNationalId()).ifPresent(m -> {
+                    throw new ForbiddenException("Another member with the same National ID already exists");
+
+            });
+        }
+
+        // 3. Apply partial updates — only fields that are not null
+        if (request.getFirstName()   != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName()    != null) user.setLastName(request.getLastName());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+
+        if (request.getNationalId()  != null) member.setNationalId(request.getNationalId());
+        if (request.getAddress()     != null) member.setAddress(request.getAddress());
+        if (request.getDateJoined()  != null) member.setDateJoined(request.getDateJoined());
+        if (request.getStatus()      != null) member.setStatus(MemberStatus.valueOf(request.getStatus()));
+
+        // 4. Persist — JPA dirty-checking saves only changed fields
+        usersRepository.save(user);
+        Members updatedMember = memberRepository.save(member);
+
+        // 5. Return updated member as DTO
+        return mapToDto(updatedMember);
     }
 
 

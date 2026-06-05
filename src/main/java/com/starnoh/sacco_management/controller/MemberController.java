@@ -3,7 +3,9 @@ package com.starnoh.sacco_management.controller;
 import com.starnoh.sacco_management.dto.ApiResponse;
 import com.starnoh.sacco_management.dto.MemberFilterRequest;
 import com.starnoh.sacco_management.dto.MemberResponseDto;
+import com.starnoh.sacco_management.dto.UpdateMemberRequest;
 import com.starnoh.sacco_management.service.MemberService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,5 +51,13 @@ public class MemberController {
     public ResponseEntity<ApiResponse<MemberResponseDto>> getMemberById(@PathVariable Long id) {
         MemberResponseDto member = memberService.getMemberById(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Fetched member successfully", member));
+    }
+
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PutMapping("/members/{id}")
+    public ResponseEntity<ApiResponse<MemberResponseDto>> updateMember(@PathVariable Long id, @Valid @RequestBody UpdateMemberRequest request) {
+        MemberResponseDto updatedMember = memberService.updateMember(id, request);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Member updated successfully", updatedMember));
     }
 }
