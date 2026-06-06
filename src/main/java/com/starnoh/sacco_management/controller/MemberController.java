@@ -55,7 +55,7 @@ public class MemberController {
 
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @PutMapping("/members/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MemberResponseDto>> updateMember(@PathVariable Long id, @Valid @RequestBody UpdateMemberRequest request) {
         MemberResponseDto updatedMember = memberService.updateMember(id, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Member updated successfully", updatedMember));
