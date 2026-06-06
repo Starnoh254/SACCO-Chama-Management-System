@@ -1,9 +1,6 @@
 package com.starnoh.sacco_management.controller;
 
-import com.starnoh.sacco_management.dto.ApiResponse;
-import com.starnoh.sacco_management.dto.MemberFilterRequest;
-import com.starnoh.sacco_management.dto.MemberResponseDto;
-import com.starnoh.sacco_management.dto.UpdateMemberRequest;
+import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -59,5 +56,13 @@ public class MemberController {
     public ResponseEntity<ApiResponse<MemberResponseDto>> updateMember(@PathVariable Long id, @Valid @RequestBody UpdateMemberRequest request) {
         MemberResponseDto updatedMember = memberService.updateMember(id, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Member updated successfully", updatedMember));
+    }
+
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<MemberResponseDto>> updateMemberStatus(@PathVariable Long id, @Valid @RequestBody UpdateMemberStatusRequest request) {
+        MemberResponseDto updatedMember = memberService.updateMemberStatus(id, request);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Member status updated successfully", updatedMember));
     }
 }

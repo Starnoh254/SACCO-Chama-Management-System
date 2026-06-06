@@ -3,9 +3,11 @@ package com.starnoh.sacco_management.service;
 import com.starnoh.sacco_management.dto.MemberFilterRequest;
 import com.starnoh.sacco_management.dto.MemberResponseDto;
 import com.starnoh.sacco_management.dto.UpdateMemberRequest;
+import com.starnoh.sacco_management.dto.UpdateMemberStatusRequest;
 import com.starnoh.sacco_management.entity.Members;
 import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.enums.MemberStatus;
+import com.starnoh.sacco_management.enums.UserStatus;
 import com.starnoh.sacco_management.exception.ForbiddenException;
 import com.starnoh.sacco_management.exception.ResourceNotFoundException;
 import com.starnoh.sacco_management.repository.MemberRepository;
@@ -17,8 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+
+import static org.apache.logging.log4j.util.StringBuilders.equalsIgnoreCase;
 
 @Service
 public class MemberService {
@@ -74,7 +79,6 @@ public class MemberService {
         if (request.getNationalId()  != null) member.setNationalId(request.getNationalId());
         if (request.getAddress()     != null) member.setAddress(request.getAddress());
         if (request.getDateJoined()  != null) member.setDateJoined(request.getDateJoined());
-        if (request.getStatus()      != null) member.setStatus(MemberStatus.valueOf(request.getStatus()));
 
         // 4. Persist — JPA dirty-checking saves only changed fields
         usersRepository.save(user);
@@ -118,5 +122,30 @@ public class MemberService {
                 member.getAddress(),
                 member.getCreatedAt()
         );
+    }
+
+    @Transactional
+    public MemberResponseDto updateMemberStatus(Long id, UpdateMemberStatusRequest request) {
+        Users admin = currentUserService.getValidatedCurrentUser();
+        checkIfUserisAdminorTreasurer(admin);
+
+        Members member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found with id : " + id));
+
+        Users user = member.getUser();
+
+        String requestedStatus = request.getStatus();
+
+        if(member.getStatus().toString().equalsIgnoreCase(requestedStatus)) {
+            throw new ForbiddenException("Member is already " + requestedStatus);
+        }
+
+        member.setStatus(MemberStatus.valueOf(requestedStatus));
+        user.setStatus(UserStatus.valueOf(requestedStatus.equalsIgnoreCase("ACTIVE") ? "ACTIVE" : "SUSPENDED"));
+        Members updatedMember = memberRepository.save(member);
+
+        usersRepository.save(user);
+
+        return mapToDto(updatedMember);
     }
 }

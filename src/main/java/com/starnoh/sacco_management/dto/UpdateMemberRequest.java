@@ -29,7 +29,4 @@ public class UpdateMemberRequest {
     @PastOrPresent(message = "Date joined must not be a future date")
     private LocalDate dateJoined;
 
-    @Pattern(regexp = "^(ACTIVE|INACTIVE)$",
-            message = "Status must be ACTIVE or INACTIVE")
-    private String status;
 }
