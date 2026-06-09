@@ -3,20 +3,21 @@ package com.starnoh.sacco_management.controller;
 import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.service.MemberService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/members")
+@RequiredArgsConstructor
+
 public class MemberController {
 
     private final MemberService memberService;
 
-    public MemberController(MemberService memberService) {
-        this.memberService = memberService;
-    }
 
     // Endpoint to fetch paginated and filtered list of members, accessible only to ADMINISTRATOR and TREASURER roles
 
@@ -65,4 +66,16 @@ public class MemberController {
         MemberResponseDto updatedMember = memberService.updateMemberStatus(id, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Member status updated successfully", updatedMember));
     }
+
+
+    @PutMapping("/search")
+    public ResponseEntity<ApiResponse<Page<MemberSearchResponseDto>>> searchMembers(@Valid @RequestBody MemberSearchRequest request , Authentication authentication) {
+        // Pass the Spring Security Authentication object so the
+        // service can apply role-based field visibility rules
+        Page<MemberSearchResponseDto> results =
+                memberService.searchMembers(request, authentication);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Fetched member successfully", results));
+    }
+
 }

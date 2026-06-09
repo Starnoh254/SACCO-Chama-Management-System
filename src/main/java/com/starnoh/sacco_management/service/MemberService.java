@@ -1,9 +1,6 @@
 package com.starnoh.sacco_management.service;
 
-import com.starnoh.sacco_management.dto.MemberFilterRequest;
-import com.starnoh.sacco_management.dto.MemberResponseDto;
-import com.starnoh.sacco_management.dto.UpdateMemberRequest;
-import com.starnoh.sacco_management.dto.UpdateMemberStatusRequest;
+import com.starnoh.sacco_management.dto.*;
 import com.starnoh.sacco_management.entity.Members;
 import com.starnoh.sacco_management.entity.Users;
 import com.starnoh.sacco_management.enums.MemberStatus;
@@ -11,6 +8,7 @@ import com.starnoh.sacco_management.enums.UserStatus;
 import com.starnoh.sacco_management.exception.ForbiddenException;
 import com.starnoh.sacco_management.exception.ResourceNotFoundException;
 import com.starnoh.sacco_management.repository.MemberRepository;
+import com.starnoh.sacco_management.repository.MemberSearchSpecification;
 import com.starnoh.sacco_management.repository.MemberSpecification;
 import com.starnoh.sacco_management.repository.UsersRepository;
 import org.springframework.data.domain.Page;
@@ -18,6 +16,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +36,32 @@ public class MemberService {
         this.currentUserService = currentUserService;
         this.memberRepository = memberRepository;
         this.usersRepository = usersRepository;
+    }
+
+    public Page<MemberSearchResponseDto> searchMembers (
+            MemberSearchRequest req , Authentication authentication
+    ) {
+        // 1. Determine caller's role
+        String role = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst().orElse("");
+        // 2. Strip filters the caller is not allowed to use
+        if (!role.equals("ROLE_ADMINISTRATOR")) {
+            req.setNationalId(null); // Only admin may filter by nationalId
+            req.setAddress(null); // Only admin may filter by address
+        }
+        // 3. Build pageable
+        Sort sort = Sort.by(
+                "ASC".equalsIgnoreCase(req.getDirection())
+                        ? Sort.Direction.ASC : Sort.Direction.DESC,
+                req.getSortBy());
+        Pageable pageable = PageRequest.of(
+                req.getPage(), Math.min(req.getSize(), 100), sort);
+        // 4. Build dynamic specification and execute query
+        Specification<Members> spec = MemberSearchSpecification.build(req);
+        Page<Members> members = memberRepository.findAll(spec, pageable);
+        // 5. Map to DTO with role-based field visibility
+        return members.map(m -> toSearchDto(m, role));
     }
 
 
@@ -148,4 +174,30 @@ public class MemberService {
 
         return mapToDto(updatedMember);
     }
+
+    private MemberSearchResponseDto toSearchDto(Members m, String role) {
+        Users user = m.getUser();
+
+        MemberSearchResponseDto.MemberSearchResponseDtoBuilder builder = MemberSearchResponseDto.builder()
+                .id(m.getId())
+                .membershipNumber(m.getMembershipNumber())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .status(m.getStatus().toString());
+        // Fields hidden from MEMBER role
+        if (!role.equals("ROLE_MEMBER")) {
+            builder.email(user.getEmail())
+                    .phoneNumber(user.getPhoneNumber())
+                    .dateJoined(m.getDateJoined())
+                    .address(m.getAddress())
+                    .createdAt(m.getCreatedAt());
+        }
+        // nationalId visible only to Admin and Auditor
+        if (role.equals("ROLE_ADMINISTRATOR") || role.equals("ROLE_AUDITOR")) {
+            builder.nationalId(m.getNationalId());
+        }
+        return builder.build();
+    }
+
 }
+
