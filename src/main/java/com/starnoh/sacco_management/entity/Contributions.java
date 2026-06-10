@@ -33,6 +33,14 @@ public class Contributions {
     @Column(name = "reference_number" , unique = true)
     private String referenceNumber;
 
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    // Audit : which user (Treasurer ) recorded this entry
+    @ManyToOne
+    @JoinColumn(name = "recorded_by" )
+    private Users users;
+
 
     @Enumerated(EnumType.STRING)
     private ContributionStatus status;
@@ -44,6 +52,13 @@ public class Contributions {
     @PrePersist
     public void prePersist() {
         createdAt = Instant.now();
+        if(contributionDate == null) {
+            contributionDate = LocalDate.now();
+        }
+
+        if(this.status == null) {
+            status = ContributionStatus.PAID;
+        }
     }
 
     public Long getId() {
